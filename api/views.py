@@ -1,6 +1,5 @@
 import django
 import requests
-from django.http import JsonResponse
 from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -10,6 +9,7 @@ from api.serializers import RepoSerializer
 
 
 def create_data_in_db(url):
+    """Get json data from url and collect to the database."""
     r = requests.get(url)
     data_list = r.json()
     for data in data_list:
@@ -49,13 +49,40 @@ def get_firsts_repos(request):
     return Response(serializer.data)
 
 
+@api_view(('GET',))
+@renderer_classes((JSONRenderer,))
+def get_repository_by_id(request, pk):
+    """Get repository info by id"""
+    repo = Repo.objects.get(id=pk)
+    serializer = RepoSerializer(repo)
+    return Response(serializer.data)
+
+
 @api_view(('POST',))
 @renderer_classes((JSONRenderer,))
 def update_repository(request, pk):
-    """Update repository information"""
+    """Update repository information by id"""
     repo = Repo.objects.get(id=pk)
     serializer = RepoSerializer(instance=repo, data=request.data)
     if serializer.is_valid():
         serializer.save()
     return Response(serializer.data)
 
+
+@api_view(('POST',))
+@renderer_classes((JSONRenderer,))
+def create_repository(request):
+    """Create repository"""
+    serializer = RepoSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+    return Response(serializer.data)
+
+
+@api_view(['DELETE'])
+@renderer_classes((JSONRenderer,))
+def delete_repository(request, pk):
+    """Delete repository by id"""
+    repo = Repo.objects.get(id=pk)
+    repo.delete()
+    return Response('Repository successfully deleted!')
